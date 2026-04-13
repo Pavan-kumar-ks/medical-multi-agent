@@ -4,6 +4,7 @@ from app.agents.domain_expert import domain_expert_agent
 from app.agents.intake import intake_agent
 from app.agents.triage import triage_agent
 from app.agents.diagnosis import diagnosis_agent
+from app.agents.verifier import verifier_agent
 from app.agents.risk_analyzer import risk_analyzer_agent
 from app.agents.test_recommender import test_recommender_agent
 from app.agents.emergency_remedy_agent import emergency_remedy_agent
@@ -60,12 +61,68 @@ def build_graph():
 
     def diagnosis_node(state):
         # Diagnosis may fail; fallback to Unknown diagnosis
+        # initial diagnosis attempt (agent_runner will itself retry once)
         res = call_agent(diagnosis_agent, args=(state,), retries=1, fallback=None)
         diag_obj = res.get("result") if res.get("ok") else res.get("result")
+
         try:
-            diagnosis_dict = diag_obj.model_dump() if hasattr(diag_obj, "model_dump") else (dict(diag_obj) if diag_obj is not None else {"diagnoses": [{"disease": "Unknown", "reason": "Diagnosis failed", "confidence": 0.0}]})
+            diagnosis_dict = diag_obj.model_dump() if hasattr(diag_obj, "model_dump") else (dict(diag_obj) if diag_obj is not None else {"diagnoses": [{"disease": "Unknown", "reason": "Diagnosis failed", "confidence": 0.0, "evidence_refs": []}]})
         except Exception:
-            diagnosis_dict = {"diagnoses": [{"disease": "Unknown", "reason": "Diagnosis failed", "confidence": 0.0}]}
+            diagnosis_dict = {"diagnoses": [{"disease": "Unknown", "reason": "Diagnosis failed", "confidence": 0.0, "evidence_refs": []}]}
+
+        # Run verifier and allow the verifier to trigger additional diagnosis attempts
+        verifier_attempts = 0
+        max_verifier_retries = 2
+
+        # helper to interpret verifier result (pydantic model or dict)
+        def _is_verified(vres):
+            if vres is None:
+                return False
+            try:
+                ok = getattr(vres, "ok", None)
+                if ok is None:
+                    ok = vres.get("ok", False)
+                return bool(ok)
+            except Exception:
+                return False
+
+        # Prepare a mutable state copy including diagnosis for verification
+        state_for_verifier = dict(state)
+        state_for_verifier["diagnosis"] = diagnosis_dict
+
+        vres = call_agent(verifier_agent, args=(state_for_verifier,), retries=0, fallback={"ok": False, "issues": ["verifier failed"], "per_item": []})
+        verifier_result = vres.get("result") if vres.get("ok") else vres.get("result")
+
+        # If not verified, attempt to re-run diagnosis up to max_verifier_retries
+        while not _is_verified(verifier_result) and verifier_attempts < max_verifier_retries:
+            verifier_attempts += 1
+            # Re-run diagnosis with one extra attempt. Provide verifier feedback
+            # so the diagnosis agent can address the verifier's issues.
+            state_with_feedback = dict(state)
+            # pass verifier_result as-is if it's serializable, otherwise try model_dump
+            try:
+                if hasattr(verifier_result, "model_dump"):
+                    state_with_feedback["verifier_feedback"] = verifier_result.model_dump()
+                else:
+                    state_with_feedback["verifier_feedback"] = verifier_result
+            except Exception:
+                state_with_feedback["verifier_feedback"] = str(verifier_result)
+
+            r = call_agent(diagnosis_agent, args=(state_with_feedback,), retries=1, fallback=None)
+            dobj = r.get("result") if r.get("ok") else r.get("result")
+            try:
+                diagnosis_dict = dobj.model_dump() if hasattr(dobj, "model_dump") else (dict(dobj) if dobj is not None else {"diagnoses": [{"disease": "Unknown", "reason": "Diagnosis failed", "confidence": 0.0, "evidence_refs": []}]})
+            except Exception:
+                diagnosis_dict = {"diagnoses": [{"disease": "Unknown", "reason": "Diagnosis failed", "confidence": 0.0, "evidence_refs": []}]}
+
+            state_for_verifier["diagnosis"] = diagnosis_dict
+            vres = call_agent(verifier_agent, args=(state_for_verifier,), retries=0, fallback={"ok": False, "issues": ["verifier failed"], "per_item": []})
+            verifier_result = vres.get("result") if vres.get("ok") else vres.get("result")
+
+        # If still not verified, replace diagnosis with safe fallback
+        if not _is_verified(verifier_result):
+            diagnosis_dict = {"diagnoses": [{"disease": "Unknown", "reason": "Failed verification", "confidence": 0.0, "evidence_refs": []}]}
+
         return {"diagnosis": diagnosis_dict}
 
     def risk_node(state):
@@ -100,7 +157,14 @@ def build_graph():
         # Emergency remedy should be best-effort; fallback to a generic instruction
         res = call_agent(emergency_remedy_agent, args=(patient,), retries=1, fallback={"remedy_steps": ["Call emergency services immediately."]})
         remedy = res.get("result") if res.get("ok") else res.get("result")
-        return {"remedy": remedy}
+        # Also fetch dynamic emergency contact numbers from LLM
+        try:
+            from app.tools.emergency_contacts import fetch_emergency_contacts
+            contacts = fetch_emergency_contacts({"patient": state.get("patient", {})})
+        except Exception:
+            contacts = []
+
+        return {"remedy": remedy, "emergency_contacts": contacts}
 
     def non_medical_node(state):
         print("This system is designed to answer medical queries only. Please provide a medical query.")
