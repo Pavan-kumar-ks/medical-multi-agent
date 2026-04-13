@@ -17,6 +17,19 @@ The returned dict has keys: `ok` (bool), `result` (agent return or None), `error
 from typing import Any, Callable, Optional, Tuple, Dict
 import time
 import traceback
+import time as _time
+
+# Simple in-memory trace of agent executions for observability during a single run
+_agent_trace = []
+
+
+def reset_agent_trace():
+    global _agent_trace
+    _agent_trace = []
+
+
+def get_agent_trace():
+    return list(_agent_trace)
 
 
 def call_agent(func: Callable, args: Tuple = (), kwargs: Dict = None, *, retries: int = 2, backoff: float = 1.0, fallback: Any = None, swallow_exceptions: bool = True) -> Dict[str, Any]:
@@ -42,11 +55,25 @@ def call_agent(func: Callable, args: Tuple = (), kwargs: Dict = None, *, retries
 
     attempt = 0
     last_exc = None
+    start_time = _time.time()
+    # record agent start
+    try:
+        name = getattr(func, "__name__", str(func))
+    except Exception:
+        name = str(func)
+    _agent_trace.append({"agent": name, "started_at": start_time, "attempts": 0, "ok": None})
 
     while attempt <= retries:
         try:
             attempt += 1
             res = func(*args, **kwargs)
+            # update trace record
+            try:
+                _agent_trace[-1]["attempts"] = attempt
+                _agent_trace[-1]["ok"] = True
+                _agent_trace[-1]["ended_at"] = _time.time()
+            except Exception:
+                pass
             return {"ok": True, "result": res, "error": None, "attempts": attempt}
         except Exception as e:
             last_exc = e
@@ -76,6 +103,13 @@ def call_agent(func: Callable, args: Tuple = (), kwargs: Dict = None, *, retries
         print(f"[agent_runner] fallback failed: {fe}")
 
     if swallow_exceptions:
+        try:
+            _agent_trace[-1]["attempts"] = attempt
+            _agent_trace[-1]["ok"] = False
+            _agent_trace[-1]["ended_at"] = _time.time()
+            _agent_trace[-1]["error"] = str(last_exc)
+        except Exception:
+            pass
         return {"ok": False, "result": fallback_value, "error": error_msg, "attempts": attempt, "trace": tb}
     else:
         raise last_exc

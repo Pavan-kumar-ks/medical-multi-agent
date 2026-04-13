@@ -89,6 +89,31 @@ def format_medical_response(response: Dict[str, Any]) -> Dict[str, Any]:
         summary_parts.append(f"Risks: {', '.join(risks)}.")
     summary = " ".join(summary_parts)
 
+    # Diagnosis summary: include top diagnosis by confidence if available
+    diagnoses = []
+    raw_diag = None
+    if isinstance(response.get("diagnosis"), dict):
+        raw_diag = response.get("diagnosis")
+    elif isinstance(response.get("raw"), dict):
+        # sometimes diagnosis may be nested under raw
+        raw_diag = response.get("raw").get("diagnosis")
+
+    if isinstance(raw_diag, dict):
+        diagnoses = raw_diag.get("diagnoses", [])
+
+    top_diag_line = ""
+    try:
+        if diagnoses:
+            # find highest confidence
+            top = max(diagnoses, key=lambda d: float(d.get("confidence", 0)))
+            top_name = top.get("disease")
+            top_conf = float(top.get("confidence", 0))
+            top_diag_line = f"Top diagnosis: {top_name} (confidence {top_conf:.2f})."
+            # prepend to summary
+            summary = top_diag_line + " " + summary
+    except Exception:
+        top_diag_line = ""
+
     # Compose pretty text
     pretty_sections = []
     pretty_sections.append("Summary:\n" + summary)
@@ -102,6 +127,27 @@ def format_medical_response(response: Dict[str, Any]) -> Dict[str, Any]:
 
     if risks:
         pretty_sections.append(_join_lines("Noted risks", risks))
+
+    # If emergency, include emergency contact numbers (configurable later)
+    # If emergency, include emergency contact numbers fetched at runtime
+    contacts = None
+    # look for contacts in top-level response or in sanitized raw
+    if emergency:
+        contacts = response.get("emergency_contacts") or (response.get("raw") or {}).get("emergency_contacts")
+        if contacts and isinstance(contacts, list):
+            en_lines = []
+            for c in contacts:
+                label = c.get("label") if isinstance(c, dict) else None
+                num = c.get("number") if isinstance(c, dict) else None
+                if label and num:
+                    en_lines.append(f"{label}: {num}")
+            if en_lines:
+                pretty_sections.append(_join_lines("Emergency contacts", en_lines))
+                # append to summary as short inline list
+                try:
+                    summary += " Emergency contacts: " + ", ".join(en_lines[:3])
+                except Exception:
+                    pass
 
     pretty_text = "\n\n".join([p for p in pretty_sections if p])
 
@@ -118,7 +164,10 @@ def format_medical_response(response: Dict[str, Any]) -> Dict[str, Any]:
         "immediate_actions": immediate_actions,
         "summary": summary,
         "pretty_text": pretty_text,
-        "raw": response,
+        # Provide a sanitized raw payload for downstream consumption — remove
+        # chat history and internal trace information so user-facing prints
+        # do not leak stored conversation state.
+        "raw": {k: v for k, v in response.items() if k not in ("chat_history", "user_input", "_agent_trace")},
     }
 
     return formatted

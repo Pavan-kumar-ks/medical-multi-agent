@@ -1,0 +1,27 @@
+# Lightweight container image that uses the Hugging Face Inference API for embeddings
+# This avoids installing heavy ML native dependencies in the image or on the host.
+
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1
+WORKDIR /app
+
+# System deps for building wheels and runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy only necessary files
+COPY requirements-api.txt /app/requirements-api.txt
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r /app/requirements-api.txt
+
+# Copy application
+COPY . /app
+
+# Default env: use HF Inference API by default; set HUGGINGFACE_HUB_TOKEN at runtime
+ENV MED_AGENT_USE_HF_API=1
+
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

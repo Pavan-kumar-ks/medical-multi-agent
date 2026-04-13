@@ -7,6 +7,9 @@ return a stable hash-based vector so the system can run locally without HF acces
 """
 from typing import List, Optional
 import hashlib
+import os
+import json
+import requests
 
 # Model is loaded lazily to avoid network calls and heavy imports at module import time
 _model = None
@@ -22,6 +25,15 @@ def _try_load_model():
     global _model, _model_failed
     if _model is not None or _model_failed:
         return
+
+    # Only attempt to load heavy HF model when explicitly enabled to avoid
+    # importing large native deps (sentence-transformers, sklearn, pyarrow)
+    # on environments where they may be incompatible (NumPy ABI issues).
+    import os
+    if os.environ.get("MED_AGENT_ENABLE_HF", "0") != "1":
+        _model_failed = True
+        return
+
     try:
         from sentence_transformers import SentenceTransformer
 
@@ -71,6 +83,17 @@ def get_embedding(text: str) -> List[float]:
     hash-based vector so downstream components can operate without HF access.
     """
     global _model, _model_failed
+    # Prefer remote HF Inference API if configured (avoids local heavy deps)
+    hf_token = os.environ.get("HUGGINGFACE_HUB_TOKEN") or os.environ.get("HF_TOKEN")
+    use_hf_api = os.environ.get("MED_AGENT_USE_HF_API", "1") == "1" and bool(hf_token)
+
+    if use_hf_api:
+        try:
+            return _hf_api_embedding(text, hf_token)
+        except Exception:
+            # fallback to local model or hash-based embedding
+            pass
+
     _try_load_model()
     if _model is not None:
         try:
@@ -85,3 +108,27 @@ def get_embedding(text: str) -> List[float]:
             return _hash_to_vector(text)
     # fallback deterministic vector
     return _hash_to_vector(text)
+
+
+def _hf_api_embedding(text: str, hf_token: str) -> List[float]:
+    """Call Hugging Face Inference API feature-extraction pipeline for canonical model.
+
+    Expects a valid `hf_token`. Returns a normalized vector list.
+    """
+    headers = {"Authorization": f"Bearer {hf_token}", "Accept": "application/json"}
+    model = "sentence-transformers/all-MiniLM-L6-v2"
+    url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model}"
+    resp = requests.post(url, headers=headers, json={"inputs": text, "options": {"wait_for_model": True}}, timeout=30)
+    resp.raise_for_status()
+    data = resp.json()
+    # API may return nested list for tokens; reduce to a single vector if needed
+    if isinstance(data, list) and data and isinstance(data[0], list):
+        vec = data[0]
+    else:
+        raise RuntimeError("Unexpected HF API response for embeddings")
+
+    # Normalize
+    norm = sum(x * x for x in vec) ** 0.5
+    if norm == 0:
+        return vec
+    return [float(x / norm) for x in vec]

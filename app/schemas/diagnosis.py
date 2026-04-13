@@ -6,6 +6,7 @@ class DiagnosisItem(BaseModel):
     disease: str
     reason: str
     confidence: float
+    evidence_refs: List[str] = []
 
 
 class DiagnosisOutput(BaseModel):
