@@ -18,9 +18,12 @@ Lightweight multi-agent pipeline for clinical decision support (RAG + rule-based
 This README documents the pipeline flow, setup, and how to run the project locally.
 
 **High-level pipeline flow**
-- Input: raw free-text patient report provided to the system.
+- Input: user provides name, age, location, then free-text symptoms.
+- Location intake (CLI): collects name/age/location and confirms a resolved location before medical orchestration.
 - `intake_agent` (app/agents/intake.py): converts free text into a structured `PatientData` object using an LLM prompt.
-- Orchestrator (app/orchestrator/graph.py): builds a state graph with nodes `intake -> diagnosis -> (risk | tests) -> tests` and invokes nodes in sequence.
+- Orchestrator (app/orchestrator/graph.py): builds a state graph with nodes `intake -> location -> hospital -> triage -> diagnosis -> (risk | tests) -> tests` and invokes nodes in sequence.
+- `location_intake_agent` (app/agents/location_intake.py): validates/normalizes user location via OSM (Nominatim), with semantic fallback + confirmation.
+- `hospital_finder_agent` (app/agents/hospital_finder.py): finds nearby hospitals (within 5 km) using Overpass + OSRM travel time.
 - `diagnosis_agent` (app/agents/diagnosis.py): performs RAG (retrieval-augmented generation):
   - Uses `retrieve_context` (app/tools/retriever.py) which calls `get_embedding` + `search` on the vector store to gather supporting documents.
   - Calls the LLM (via `app.config.llm_call`) with the patient data + retrieved context and returns a JSON diagnosis output.
@@ -32,13 +35,26 @@ This README documents the pipeline flow, setup, and how to run the project local
 **Data & memory / RAG**
 - Embeddings: `app/memory/embeddings.py` uses `sentence-transformers` (`all-MiniLM-L6-v2`) to compute embeddings.
 - Vector store: `app/memory/vector_store.py` stores a FAISS index and a `documents.npy` file under `app/data/`.
-- Ingestion: `scripts/ingest_data.py` shows an example pipeline that embeds a small list of documents and writes `vector.index` and `documents.npy` into `app/data/`.
+- Ingestion: `scripts/ingest_kb.py` embeds KB files under `app/data/kb/` and writes `vector.index` and `documents.npy` into `app/data/`.
 - Runtime: `app.main` calls `load_vector_store()` before invoking the graph so retrieval works.
+
+**Maps (OpenStreetMap stack)**
+- Geocoding: Nominatim (OSM) via `app/tools/mcp_maps.py`
+- Hospitals: Overpass API within 5 km radius
+- Travel time: OSRM (optional)
+- Fallback Overpass endpoints are used automatically if a primary endpoint times out.
 
 **Configuration / LLM**
 - `app/config.py` wraps the Groq client. Required environment variables:
   - `GROQ_API_KEY` — API key for Groq
   - `MODEL_NAME` — model identifier to call
+
+**Configuration / OSM**
+Optional environment variables (defaults are safe for local use):
+- `NOMINATIM_URL` — default `https://nominatim.openstreetmap.org/search`
+- `OVERPASS_URL` — default `https://overpass-api.de/api/interpreter`
+- `OSRM_URL` — default `http://router.project-osrm.org/route/v1/driving`
+- `NOMINATIM_EMAIL` — contact for Nominatim user-agent (recommended)
 
 Create a `.env` file in the repository root or set these variables in your environment.
 
@@ -65,7 +81,7 @@ MODEL_NAME=groq-1.0
 3) Build the vector DB (RAG index) before running the pipeline:
 
 ```powershell
-python scripts/ingest_data.py
+python scripts/ingest_kb.py
 ```
 
 This will create `app/data/vector.index` and `app/data/documents.npy` used at runtime.
@@ -73,7 +89,7 @@ This will create `app/data/vector.index` and `app/data/documents.npy` used at ru
 4) Run the CLI runner:
 
 ```powershell
-python app/main.py
+python -m app.main
 # enter a free-text patient description when prompted
 ```
 
@@ -100,11 +116,14 @@ pytest -q
 - `app/orchestrator/router.py` — routing policy after diagnosis: inspects diagnosis confidence to choose `risk` vs `tests`.
 - `app/agents/intake.py` — input parsing LLM prompt → `PatientData`.
 - `app/agents/diagnosis.py` — RAG + LLM diagnosis generation and safe JSON parsing
+- `app/agents/location_intake.py` — location confirmation and OSM geocode lookup
+- `app/agents/hospital_finder.py` — hospital discovery within 5 km + travel time (OSM)
 - `app/tools/retriever.py` — glue between embeddings and FAISS search
 - `app/memory/vector_store.py` — FAISS index init/load/search; raises a clear error if index missing (run `scripts/ingest_data.py`).
 
 **Troubleshooting**
-- If you get `Vector DB not found. Run ingest_data first.` run `python scripts/ingest_data.py`.
+- If you get `Vector DB not found. Run ingest_data first.` run `python scripts/ingest_kb.py`.
+- Overpass timeouts can happen; the system tries multiple Overpass endpoints and returns empty hospitals if all fail.
 - Embeddings model download may take time on first run; ensure you have network access and sufficient disk space.
 - LLM errors: ensure `GROQ_API_KEY` and `MODEL_NAME` are set and valid.
 
