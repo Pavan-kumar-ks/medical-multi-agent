@@ -8,6 +8,8 @@ from app.agents.verifier import verifier_agent
 from app.agents.risk_analyzer import risk_analyzer_agent
 from app.agents.test_recommender import test_recommender_agent
 from app.agents.emergency_remedy_agent import emergency_remedy_agent
+from app.agents.location_intake import location_intake_agent
+from app.agents.hospital_finder import hospital_finder_agent
 from app.orchestrator.router import route_after_diagnosis
 from app.orchestrator.agent_runner import call_agent
 
@@ -44,6 +46,24 @@ def build_graph():
         except Exception:
             patient_dict = {"symptoms": [state.get("user_input")]}
         return {"patient": patient_dict}
+
+    def location_node(state):
+        # Ask for location before diagnosis; if missing, prompt user
+        res = call_agent(location_intake_agent, args=(state,), retries=0, fallback={"need_location": True, "location_prompt": "Please provide your location."})
+        payload = res.get("result") if res.get("ok") else res.get("result")
+
+        # Update session memory if provided
+        session_memory = payload.get("session_memory") if isinstance(payload, dict) else None
+        out = {}
+        if isinstance(payload, dict):
+            out.update({
+                "location": payload.get("location"),
+                "need_location": payload.get("need_location"),
+                "location_prompt": payload.get("location_prompt"),
+            })
+        if session_memory is not None:
+            out["session_memory"] = session_memory
+        return out
 
     def triage_node(state):
         from app.schemas.patient import PatientData
@@ -150,7 +170,7 @@ def build_graph():
         return {"tests": tests}
 
     def emergency_node(state):
-        print("--- EMERGENCY DETECTED ---")
+        print("--- EMERGENCY DETECTEBD ---")
         print("Generating immediate first-aid advice...")
         from app.schemas.patient import PatientData
         patient = PatientData(**state["patient"])
@@ -166,6 +186,19 @@ def build_graph():
 
         return {"remedy": remedy, "emergency_contacts": contacts}
 
+    def hospital_node(state):
+        res = call_agent(hospital_finder_agent, args=(state,), retries=0, fallback={"hospitals": []})
+        payload = res.get("result") if res.get("ok") else res.get("result")
+        try:
+            hospitals = payload.get("hospitals", []) if isinstance(payload, dict) else payload
+        except Exception:
+            hospitals = []
+        return {"hospitals": hospitals}
+
+    def await_location_node(state):
+        # Placeholder node when waiting for user location input
+        return {}
+
     def non_medical_node(state):
         print("This system is designed to answer medical queries only. Please provide a medical query.")
         return {}
@@ -174,10 +207,13 @@ def build_graph():
     graph.add_node("domain_expert", domain_expert_node)
     graph.add_node("intake", intake_node)
     graph.add_node("triage", triage_node)
+    graph.add_node("location", location_node)
     graph.add_node("diagnosis", diagnosis_node)
     graph.add_node("risk", risk_node)
     graph.add_node("tests", test_node)
     graph.add_node("emergency", emergency_node)
+    graph.add_node("hospital", hospital_node)
+    graph.add_node("await_location", await_location_node)
     graph.add_node("non_medical", non_medical_node)
 
     # Flow
@@ -199,7 +235,24 @@ def build_graph():
     )
     graph.add_edge("non_medical", END)
 
-    graph.add_edge("intake", "triage")
+    graph.add_edge("intake", "location")
+
+    def route_after_location(state):
+        # If location missing, stop and ask user for it
+        if state.get("need_location"):
+            return "await_location"
+        return "hospital"
+
+    graph.add_conditional_edges(
+        "location",
+        route_after_location,
+        {
+            "hospital": "hospital",
+            "await_location": "await_location",
+        }
+    )
+
+    graph.add_edge("hospital", "triage")
 
     # Conditional routing after triage
     def route_after_triage(state):
@@ -216,6 +269,7 @@ def build_graph():
         }
     )
     
+    # Emergency now proceeds directly to risk (hospital search already done after location)
     graph.add_edge("emergency", "risk")
 
     # Conditional routing after diagnosis

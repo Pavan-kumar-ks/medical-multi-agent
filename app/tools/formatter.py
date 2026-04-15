@@ -53,6 +53,9 @@ def format_medical_response(response: Dict[str, Any]) -> Dict[str, Any]:
     # Emergency flag
     emergency = bool(response.get("is_emergency") or response.get("emergency") or False)
 
+    # Hospitals (if found)
+    hospitals = response.get("hospitals") or (response.get("raw") or {}).get("hospitals") or []
+
     # Build short prioritized immediate actions
     immediate_actions = []
     if emergency:
@@ -128,6 +131,23 @@ def format_medical_response(response: Dict[str, Any]) -> Dict[str, Any]:
     if risks:
         pretty_sections.append(_join_lines("Noted risks", risks))
 
+    if hospitals:
+        hosp_lines = []
+        for h in hospitals:
+            if not isinstance(h, dict):
+                continue
+            name = h.get("name") or "Hospital"
+            addr = h.get("address") or ""
+            phone = h.get("phone") or ""
+            line = name
+            if addr:
+                line += f" — {addr}"
+            if phone:
+                line += f" (Phone: {phone})"
+            hosp_lines.append(line)
+        if hosp_lines:
+            pretty_sections.append(_join_lines("Nearby hospitals", hosp_lines))
+
     # If emergency, include emergency contact numbers (configurable later)
     # If emergency, include emergency contact numbers fetched at runtime
     contacts = None
@@ -162,6 +182,7 @@ def format_medical_response(response: Dict[str, Any]) -> Dict[str, Any]:
         "risks": risks,
         "recommended_tests": tests,
         "immediate_actions": immediate_actions,
+        "hospitals": hospitals,
         "summary": summary,
         "pretty_text": pretty_text,
         # Provide a sanitized raw payload for downstream consumption — remove

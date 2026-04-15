@@ -5,6 +5,16 @@ from app.schemas.patient import PatientData
 def intake_agent(state: dict) -> PatientData:
     user_input = state["user_input"]
     chat_history = state.get("chat_history", [])
+    session = state.get("session_memory") or {}
+
+    # If we're waiting for location, avoid overwriting patient data with location text
+    if session.get("awaiting_location"):
+        try:
+            existing = session.get("patient")
+            if isinstance(existing, dict):
+                return PatientData(**existing)
+        except Exception:
+            pass
 
     prompt = f"""
 You are a medical intake assistant. Your job is to extract structured information from the user's input, considering the entire conversation history.
@@ -31,7 +41,18 @@ Return ONLY valid JSON in this format:
 
     try:
         data = json.loads(response)
-        return PatientData(**data)
+        patient = PatientData(**data)
+        # Persist patient in session memory for later turns
+        try:
+            session["patient"] = patient.model_dump()
+        except Exception:
+            session["patient"] = data
+        return patient
     except Exception:
         # fallback (very important)
-        return PatientData(symptoms=[user_input])
+        patient = PatientData(symptoms=[user_input])
+        try:
+            session["patient"] = patient.model_dump()
+        except Exception:
+            session["patient"] = {"symptoms": [user_input]}
+        return patient
