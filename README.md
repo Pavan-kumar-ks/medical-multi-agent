@@ -1,140 +1,178 @@
 # Medical Multi-Agent
 
-Lightweight multi-agent pipeline for clinical decision support (RAG + rule-based).
+AI-assisted multi-agent clinical decision support with RAG, emergency triage, panel-based conflict resolution, location-aware hospital recommendations, and hospital doctor-detail lookup.
 
-**Repository layout**
-- `app/` — application code
-  - `main.py` — CLI entrypoint and programmatic runner (`run_agentic_system`)
-  - `config.py` — LLM client wrapper and env config
-  - `agents/` — agent implementations (`intake`, `diagnosis`, `risk_analyzer`, `test_recommender`, ...)
-  - `orchestrator/` — flow graph and routing logic
-  - `tools/` — retrieval and rules engine helpers
-  - `memory/` — embeddings and vector store helpers
-  - `data/` — vector index and document store produced by ingestion
-  - `schemas/` — Pydantic models for structured data
-- `scripts/` — helper scripts (e.g., `ingest_data.py`)
-- `notebooks/` — experimentation
+## What Is Implemented
 
-This README documents the pipeline flow, setup, and how to run the project locally.
+- Guided CLI onboarding for patient name, age, and location confirmation.
+- Medical-domain query gating (`medical` vs `non-medical`).
+- Structured intake, triage, diagnosis, verifier loop, risk analysis, and test recommendation.
+- 4-role medical panel review with disagreement detection and adjudication.
+- Nearby hospital search with diagnosis-aware ranking (`3 aligned + 2 nearest`).
+- Follow-up question handling without re-running full complaint pipeline.
+- Hospital detail mode: contact/booking info + doctor profile extraction via web search and scraping.
 
-**High-level pipeline flow**
-- Input: user provides name, age, location, then free-text symptoms.
-- Location intake (CLI): collects name/age/location and confirms a resolved location before medical orchestration.
-- `intake_agent` (app/agents/intake.py): converts free text into a structured `PatientData` object using an LLM prompt.
-- Orchestrator (app/orchestrator/graph.py): builds a state graph with nodes `intake -> location -> hospital -> triage -> diagnosis -> (risk | tests) -> tests` and invokes nodes in sequence.
-- `location_intake_agent` (app/agents/location_intake.py): validates/normalizes user location via OSM (Nominatim), with semantic fallback + confirmation.
-- `hospital_finder_agent` (app/agents/hospital_finder.py): finds nearby hospitals (within 5 km) using Overpass + OSRM travel time.
-- `diagnosis_agent` (app/agents/diagnosis.py): performs RAG (retrieval-augmented generation):
-  - Uses `retrieve_context` (app/tools/retriever.py) which calls `get_embedding` + `search` on the vector store to gather supporting documents.
-  - Calls the LLM (via `app.config.llm_call`) with the patient data + retrieved context and returns a JSON diagnosis output.
-- Router (app/orchestrator/router.py): `route_after_diagnosis` inspects `diagnosis` output (top confidence) and decides to route to `risk` (rule-based analysis) or directly to `tests` (when low confidence → request tests).
-- `risk_analyzer_agent` (app/agents/risk_analyzer.py): runs deterministic medical rules (`app.tools.rules_engine`) to produce risk flags.
-- `test_recommender_agent` (app/agents/test_recommender.py): LLM-backed agent recommending 3–5 tests in JSON form.
-- Final output: aggregated `patient`, `diagnosis`, `risks`, and `recommended_tests` returned by the orchestrator.
+## Current Flow
 
-**Data & memory / RAG**
-- Embeddings: `app/memory/embeddings.py` uses `sentence-transformers` (`all-MiniLM-L6-v2`) to compute embeddings.
-- Vector store: `app/memory/vector_store.py` stores a FAISS index and a `documents.npy` file under `app/data/`.
-- Ingestion: `scripts/ingest_kb.py` embeds KB files under `app/data/kb/` and writes `vector.index` and `documents.npy` into `app/data/`.
-- Runtime: `app.main` calls `load_vector_store()` before invoking the graph so retrieval works.
+The graph entry point is now a question classifier:
 
-**Maps (OpenStreetMap stack)**
-- Geocoding: Nominatim (OSM)
-- Hospitals: Overpass API (nearby search)
-- Travel time: OSRM
-- The system uses fallback endpoints for better reliability.
+1. `question_classifier`
+2. If follow-up: `followup_responder` -> end
+3. Else: `domain_expert` -> `intake` -> `location` -> `triage`
+4. Emergency branch: `emergency` -> `diagnosis`
+5. Non-emergency branch: `diagnosis`
+6. `panel` (primary diagnostician, skeptical reviewer, evidence auditor, safety triage lead)
+7. `hospital`
+8. `route_after_diagnosis` -> `risk` or `tests`
+9. `risk` -> `tests` -> end
 
-**Configuration / LLM**
-- `app/config.py` wraps the Groq client. Required environment variables:
-  - `GROQ_API_KEY` — API key for Groq
-  - `MODEL_NAME` — model identifier to call
+After results are shown, the CLI can accept hospital number/name input to run the hospital-detail agent and show doctor-specific information.
 
-**Configuration / Maps**
-OSM variables:
-- `NOMINATIM_URL` — default `https://nominatim.openstreetmap.org/search`
-- `OVERPASS_URL` — default `https://overpass-api.de/api/interpreter`
-- `OSRM_URL` — default `http://router.project-osrm.org/route/v1/driving`
-- `NOMINATIM_EMAIL` — contact for Nominatim user-agent (recommended)
+## Repository Layout
 
-Create a `.env` file in the repository root or set these variables in your environment.
+- `app/main.py`: CLI runner, onboarding flow, session persistence, hospital selection handling.
+- `app/orchestrator/graph.py`: full state graph, panel integration, follow-up routing.
+- `app/orchestrator/router.py`: post-hospital routing based on panel/diagnosis confidence.
+- `app/orchestrator/state.py`: graph state fields (including panel and follow-up fields).
+- `app/agents/`: medical agents and conversation agents.
+- `app/agents/panel/`: panel role agents, conflict detector, adjudicator.
+- `app/tools/formatter.py`: rich terminal rendering for diagnosis, panel summary, hospitals, and hospital details.
+- `app/agents/hospital_finder.py`: staged-radius nearby search and diagnosis-aware ranking.
+- `app/agents/hospital_detail_agent.py`: hospital contact + doctor extraction workflow.
+- `app/scraper/`: Scrapy + Playwright doctor scraping package.
+- `app/memory/`: embeddings/vector store/session memory helpers.
+- `scripts/`: ingestion and maintenance scripts.
 
-**Setup & quick run**
-Prerequisites: Python 3.9+ recommended.
+## LLM, RAG, and Guarded Diagnosis
 
-1) Create a virtual environment and install dependencies:
+- LLM wrapper: `app/config.py` (`llm_call`).
+- Retrieval: `app/tools/retriever.py` with FAISS-backed vector store.
+- Diagnosis output is schema-validated by verifier and retried with verifier feedback.
+- If verification still fails, the graph falls back to a safe unknown diagnosis.
+
+## Panel-Based Conflict Resolution
+
+Panel roles used in `app/agents/panel/`:
+
+- Primary Diagnostician
+- Skeptical Reviewer
+- Evidence Auditor
+- Safety Triage Lead
+
+The pipeline then:
+
+- Detects conflicts (`conflict_detector`)
+- Adjudicates a final panel decision (`adjudicator`)
+- Can trigger emergency override when safety risk is detected
+- Feeds panel-adjudicated diagnosis downstream for hospital/risk/test routing
+
+## Hospital and Location Features
+
+- Location normalization and confirmation via `location_intake_agent`.
+- Nearby hospitals from OSM stack:
+  - Geocoding: Nominatim
+  - Nearby hospitals: Overpass
+  - Travel distance/time: OSRM
+- Radius expansion strategy: `5 km -> 10 km -> 20 km`.
+- Ranking strategy: top diagnosis specialty alignment first, then nearest fallbacks.
+
+## Hospital Doctor Details and Scraping
+
+Hospital detail lookup (`hospital_detail_agent`) does:
+
+1. Web-search based extraction of hospital contact/booking info.
+2. Doctor scraping using Scrapy spider (`app/scraper/spiders/doctor_spider.py`).
+3. Specialty filtering based on diagnosed condition.
+4. LLM/web fallback extraction when scraper returns no profiles.
+
+Scraper stack:
+
+- `scrapy`
+- `scrapy-playwright`
+- Playwright Chromium runtime
+
+## Requirements
+
+Current `requirements.txt` includes:
+
+- `fastapi`, `uvicorn`
+- `pydantic`, `python-dotenv`, `requests`
+- `groq`
+- `faiss-cpu`, `sentence-transformers`
+- `duckduckgo-search`
+- `scrapy`, `scrapy-playwright`
+- `langgraph`
+
+After installing requirements, install the Playwright browser runtime:
+
+```powershell
+playwright install chromium
+```
+
+## Environment Variables
+
+Required:
+
+- `GROQ_API_KEY`
+- `MODEL_NAME`
+
+Common optional map variables:
+
+- `NOMINATIM_URL` (default `https://nominatim.openstreetmap.org/search`)
+- `OVERPASS_URL` (default `https://overpass-api.de/api/interpreter`)
+- `OSRM_URL` (default `http://router.project-osrm.org/route/v1/driving`)
+- `NOMINATIM_EMAIL` (recommended contact in user-agent)
+
+## Setup and Run
+
+1. Create and activate virtual environment:
 
 ```powershell
 python -m venv venv
 venv\Scripts\Activate.ps1
+```
+
+2. Install dependencies:
+
+```powershell
 pip install -r requirements.txt
-# additional runtime deps used by embeddings/vector store
-pip install sentence-transformers faiss-cpu numpy
+playwright install chromium
 ```
 
-2) Create `.env` (example):
+3. Configure `.env` (minimum):
 
-```
-GROQ_API_KEY=sk-...
-MODEL_NAME=groq-1.0
+```env
+GROQ_API_KEY=your_key_here
+MODEL_NAME=llama-3.3-70b-versatile
 ```
 
-3) Build the vector DB (RAG index) before running the pipeline:
+4. Build vector index (first run):
 
 ```powershell
 python scripts/ingest_kb.py
 ```
 
-This will create `app/data/vector.index` and `app/data/documents.npy` used at runtime.
-
-4) Run the CLI runner:
+5. Start CLI:
 
 ```powershell
-python -m app.main
-# enter a free-text patient description when prompted
+python app/main.py
 ```
 
-Programmatic usage (importable):
+## Notes
 
-```python
-from app.main import run_agentic_system
-print(run_agentic_system('38yo female with fever and severe body pain for 3 days'))
-```
+- The active runtime experience is CLI-first.
+- Follow-up questions are answered from stored diagnosis context.
+- Hospital detail mode is triggered by selecting a listed hospital number/name after report output.
 
-**Notes about running as a server**
-- The repository previously included a FastAPI scaffold but the current `app/main.py` is a CLI/programmatic runner. Running `uvicorn app.main:app` is not supported unless you add a FastAPI `app` object.
-
-**Tests**
-- Unit tests are present as `test_*.py` files in the repo root. Run them with:
+## Testing
 
 ```powershell
-pip install pytest
 pytest -q
 ```
 
-**Developer details / important files**
-- `app/orchestrator/graph.py` — constructs the `StateGraph` (nodes and edges) and compiles the graph used by `main.py`.
-- `app/orchestrator/router.py` — routing policy after diagnosis: inspects diagnosis confidence to choose `risk` vs `tests`.
-- `app/agents/intake.py` — input parsing LLM prompt → `PatientData`.
-- `app/agents/diagnosis.py` — RAG + LLM diagnosis generation and safe JSON parsing
-- `app/agents/location_intake.py` — location confirmation and OSM geocode lookup
-- `app/agents/hospital_finder.py` — hospital discovery within 5 km + travel time (OSM)
-- `app/tools/retriever.py` — glue between embeddings and FAISS search
-- `app/memory/vector_store.py` — FAISS index init/load/search; raises a clear error if index missing (run `scripts/ingest_data.py`).
+## Troubleshooting
 
-**Troubleshooting**
-- If you get `Vector DB not found. Run ingest_data first.` run `python scripts/ingest_kb.py`.
-- Overpass timeouts can happen; the system tries multiple Overpass endpoints and returns empty hospitals if all fail.
-- Embeddings model download may take time on first run; ensure you have network access and sufficient disk space.
-- LLM errors: ensure `GROQ_API_KEY` and `MODEL_NAME` are set and valid.
-
-**Next steps / improvements**
-- Add a FastAPI wrapper (`app` FastAPI instance) to expose HTTP endpoints.
-- Add robust input validation and unit tests for each agent.
-- Add CI that builds the FAISS index for tests or mocks retrieval during unit tests.
-
-If you'd like, I can also:
-- add a minimal FastAPI server wrapper, or
-- update `requirements.txt` to include `sentence-transformers`, `faiss-cpu`, and `numpy`.
-
----
+- If vector index is missing, run: `python scripts/ingest_kb.py`.
+- If hospital scraping returns nothing, ensure Scrapy + Playwright and Chromium are installed.
+- If LLM responses fail, verify `GROQ_API_KEY` and `MODEL_NAME`.
 

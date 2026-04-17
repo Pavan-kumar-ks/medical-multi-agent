@@ -12,11 +12,41 @@ from app.agents.location_intake import location_intake_agent
 from app.agents.hospital_finder import hospital_finder_agent
 from app.orchestrator.router import route_after_diagnosis
 from app.orchestrator.agent_runner import call_agent
+# Panel agents
+from app.agents.panel.primary_diagnostician import primary_diagnostician
+from app.agents.panel.skeptical_reviewer import skeptical_reviewer
+from app.agents.panel.evidence_auditor import evidence_auditor
+from app.agents.panel.safety_triage_lead import safety_triage_lead
+from app.agents.panel.conflict_detector import conflict_detector
+from app.agents.panel.adjudicator import adjudicator
+# Conversation routing agents
+from app.agents.question_classifier import question_classifier
+from app.agents.followup_responder import followup_responder
 
 def build_graph():
     graph = StateGraph(AgentState)
 
     # Nodes
+
+    def question_classifier_node(state):
+        """New graph entry point — decides followup vs new complaint."""
+        res = call_agent(
+            question_classifier, args=(state,), retries=1,
+            fallback={"question_type": "new_complaint"},
+        )
+        payload = res.get("result") or {}
+        qt = payload.get("question_type", "new_complaint")
+        return {"question_type": qt}
+
+    def followup_responder_node(state):
+        """Answer a follow-up question using prior diagnosis context."""
+        res = call_agent(
+            followup_responder, args=(state,), retries=1,
+            fallback={"followup_answer": "I'm sorry, I couldn't generate a specific answer. Please consult your doctor."},
+        )
+        payload = res.get("result") or {}
+        return {"followup_answer": payload.get("followup_answer", "")}
+
     def domain_expert_node(state):
         # Wrap domain expert in safe runner; fallback to non-medical
         res = call_agent(domain_expert_agent, args=(state["user_input"],), retries=1, fallback={"is_medical_query": False})
@@ -186,6 +216,75 @@ def build_graph():
 
         return {"remedy": remedy, "emergency_contacts": contacts}
 
+    def panel_node(state):
+        """Run all 4 panel role agents independently, then detect conflicts and adjudicate."""
+        print("🔬 Running medical panel review...")
+
+        # ── Step 1: Independent opinions (no cross-talk) ──
+        fallback_opinion = {
+            "role": "unknown", "diagnoses": [], "red_flags": [],
+            "tests_needed": [], "urgency": "routine", "notes": "Agent failed.",
+        }
+        res_primary  = call_agent(primary_diagnostician,  args=(state,), retries=1, fallback=fallback_opinion)
+        res_skeptic  = call_agent(skeptical_reviewer,      args=(state,), retries=1, fallback={**fallback_opinion, "role": "skeptical_reviewer"})
+        res_auditor  = call_agent(evidence_auditor,        args=(state,), retries=1, fallback={**fallback_opinion, "role": "evidence_auditor"})
+        res_safety   = call_agent(safety_triage_lead,      args=(state,), retries=1, fallback={**fallback_opinion, "role": "safety_triage_lead", "emergency_override": False, "cannot_miss_diagnoses": []})
+
+        opinions = [
+            res_primary.get("result") or fallback_opinion,
+            res_skeptic.get("result") or {**fallback_opinion, "role": "skeptical_reviewer"},
+            res_auditor.get("result") or {**fallback_opinion, "role": "evidence_auditor"},
+            res_safety.get("result")  or {**fallback_opinion, "role": "safety_triage_lead"},
+        ]
+
+        # ── Step 2: Conflict detection ──
+        print("⚖️  Detecting panel conflicts...")
+        try:
+            conflict_report = conflict_detector(opinions)
+        except Exception as e:
+            conflict_report = {
+                "conflicts": [], "conflict_count": 0,
+                "emergency_flagged": False, "all_urgencies": ["routine"],
+                "all_top_diseases": [], "consensus_diseases": [],
+            }
+
+        # ── Step 3: Adjudication ──
+        print("🏛️  Adjudicating panel decision...")
+        try:
+            panel_result = adjudicator(opinions, conflict_report)
+        except Exception:
+            panel_result = {
+                "final_diagnoses": state.get("diagnosis", {}).get("diagnoses", []),
+                "emergency_triggered": False,
+                "resolved_urgency": "routine",
+                "panel_summary": "Panel adjudication failed; original diagnosis used.",
+                "conflict_reason": "", "why_final_won": "",
+                "resolving_test": "", "alternate_considered": [],
+                "uncertainty_flag": True, "conflict_count": 0,
+                "consensus_diseases": [], "cannot_miss": [],
+            }
+
+        # ── Safety override: if panel triggers emergency, update is_emergency ──
+        is_emergency = state.get("is_emergency", False)
+        if panel_result.get("emergency_triggered"):
+            is_emergency = True
+            print("🚨 Panel triggered emergency override!")
+
+        # ── Merge panel final_diagnoses back into the diagnosis field ──
+        # This ensures downstream nodes (hospital, risk, tests) use panel-adjudicated diagnosis
+        panel_diag = panel_result.get("final_diagnoses")
+        updated_diagnosis = state.get("diagnosis") or {}
+        if panel_diag:
+            updated_diagnosis = {"diagnoses": panel_diag}
+
+        return {
+            "panel_opinions":  opinions,
+            "panel_conflicts": conflict_report,
+            "panel_decision":  panel_result,
+            "diagnosis":       updated_diagnosis,
+            "is_emergency":    is_emergency,
+        }
+
     def hospital_node(state):
         res = call_agent(hospital_finder_agent, args=(state,), retries=0, fallback={"hospitals": []})
         payload = res.get("result") if res.get("ok") else res.get("result")
@@ -206,11 +305,14 @@ def build_graph():
         return {}
 
     # Add nodes
+    graph.add_node("question_classifier", question_classifier_node)   # ← new entry point
+    graph.add_node("followup_responder",  followup_responder_node)     # ← follow-up handler
     graph.add_node("domain_expert", domain_expert_node)
     graph.add_node("intake", intake_node)
     graph.add_node("triage", triage_node)
     graph.add_node("location", location_node)
     graph.add_node("diagnosis", diagnosis_node)
+    graph.add_node("panel", panel_node)
     graph.add_node("risk", risk_node)
     graph.add_node("tests", test_node)
     graph.add_node("emergency", emergency_node)
@@ -218,10 +320,26 @@ def build_graph():
     graph.add_node("await_location", await_location_node)
     graph.add_node("non_medical", non_medical_node)
 
-    # Flow
-    graph.set_entry_point("domain_expert")
+    # ── Entry point: question classifier ──────────────────────────────────
+    graph.set_entry_point("question_classifier")
 
-    # Conditional routing after domain expert
+    def route_after_classifier(state):
+        if state.get("question_type") == "followup":
+            return "followup_responder"
+        return "domain_expert"
+
+    graph.add_conditional_edges(
+        "question_classifier",
+        route_after_classifier,
+        {
+            "followup_responder": "followup_responder",
+            "domain_expert":      "domain_expert",
+        },
+    )
+    # Follow-up answers are complete — end here
+    graph.add_edge("followup_responder", END)
+
+    # ── Existing routing from domain expert ───────────────────────────────
     def route_after_domain_expert(state):
         if state.get("is_medical_query"):
             return "intake"
@@ -232,8 +350,8 @@ def build_graph():
         route_after_domain_expert,
         {
             "intake": "intake",
-            "non_medical": "non_medical"
-        }
+            "non_medical": "non_medical",
+        },
     )
     graph.add_edge("non_medical", END)
 
@@ -272,8 +390,10 @@ def build_graph():
     # Emergency still gets diagnosis so hospitals can be ranked by diagnosis context
     graph.add_edge("emergency", "diagnosis")
 
-    # Always run hospital discovery after diagnosis
-    graph.add_edge("diagnosis", "hospital")
+    # Diagnosis → Panel → Hospital
+    # Panel reviews, resolves conflicts, and may override emergency flag
+    graph.add_edge("diagnosis", "panel")
+    graph.add_edge("panel", "hospital")
 
     # Conditional routing after hospital (based on diagnosis confidence)
     graph.add_conditional_edges(

@@ -17,3 +17,10 @@ class AgentState(TypedDict):
     emergency_contacts: Optional[List[Dict[str, Any]]]
     is_emergency: bool
     is_medical_query: bool
+    # ── Medical Panel fields ──────────────────────────────────────────────────
+    panel_opinions: Optional[List[Dict[str, Any]]]    # raw output from 4 role agents
+    panel_conflicts: Optional[Dict[str, Any]]          # conflict detector report
+    panel_decision: Optional[Dict[str, Any]]           # adjudicator final output
+    # ── Conversation routing fields ───────────────────────────────────────────
+    question_type: Optional[str]                       # "followup" | "new_complaint"
+    followup_answer: Optional[str]                     # plain-text answer for follow-up Qs

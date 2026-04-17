@@ -4,3 +4,18 @@ pydantic
 groq
 python-dotenv
 requests
+
+# Vector store & embeddings
+faiss-cpu
+sentence-transformers
+
+# Web search (no API key required)
+duckduckgo-search
+
+# Web scraping
+scrapy
+scrapy-playwright
+# After installing, run: playwright install chromium
+
+# LangGraph orchestration
+langgraph
