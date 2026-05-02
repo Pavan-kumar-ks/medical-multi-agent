@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
 import math
 
-from app.tools.mcp_maps import geocode_location, find_nearby_hospitals, get_place_details, get_travel_time
+from app.tools.mcp_maps import geocode_location, find_nearby_hospitals, get_place_details, get_travel_time, reverse_geocode
 
 
 # Disease / condition → medical specialty keywords for hospital relevance scoring
@@ -170,8 +170,20 @@ def hospital_finder_agent(state: Dict[str, Any]) -> Dict[str, Any]:
         except Exception:
             pass
 
+        # ── Get accurate address via reverse geocoding ──────────────────────
+        real_address = ""
+        try:
+            if r.get("lat") is not None and r.get("lng") is not None:
+                geo = reverse_geocode(float(r["lat"]), float(r["lng"]))
+                real_address = geo.get("short") or ""
+        except Exception:
+            pass
+        # Fall back to OSM tag address only when reverse geocode fails
+        if not real_address:
+            real_address = details.get("address") or r.get("address") or ""
+
         name_text    = (r.get("name") or "").lower()
-        address_text = (details.get("address") or r.get("address") or "").lower()
+        address_text = real_address.lower()
         combined     = f"{name_text} {address_text}"
 
         # Relevance scoring
@@ -187,7 +199,7 @@ def hospital_finder_agent(state: Dict[str, Any]) -> Dict[str, Any]:
 
         hospitals.append({
             "name":          r.get("name"),
-            "address":       details.get("address") or r.get("address"),
+            "address":       real_address or None,
             "phone":         details.get("phone"),
             "distance_m":    travel.get("distance_m") or r.get("distance_m") or approx_dist,
             "travel_time_s": travel.get("duration_s"),

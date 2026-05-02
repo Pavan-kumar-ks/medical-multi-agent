@@ -10,12 +10,18 @@ faiss-cpu
 sentence-transformers
 
 # Web search (no API key required)
-duckduckgo-search
+# The package was renamed from duckduckgo-search to ddgs — install the new one:
+ddgs
 
 # Web scraping
-scrapy
-scrapy-playwright
+beautifulsoup4        # HTML parsing
+lxml                  # fast BS4 parser
+playwright            # JS-page rendering (sync API used directly)
 # After installing, run: playwright install chromium
+
+# Scrapy kept for reference — no longer used as subprocess
+# scrapy
+# scrapy-playwright
 
 # LangGraph orchestration
 langgraph

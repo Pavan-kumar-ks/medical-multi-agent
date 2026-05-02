@@ -224,6 +224,43 @@ out center;
     return results
 
 
+def reverse_geocode(lat: float, lng: float) -> Dict[str, Any]:
+    """Reverse geocode lat/lng → human-readable address via Nominatim.
+
+    Returns a dict with keys: ``short`` (neighbourhood/town), ``full`` (display_name).
+    Falls back to empty strings on failure.
+    """
+    try:
+        resp = requests.get(
+            "https://nominatim.openstreetmap.org/reverse",
+            params={"lat": lat, "lon": lng, "format": "json"},
+            headers=_headers(),
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        address = data.get("address") or {}
+
+        # Build a short human-readable label from the most specific fields
+        parts = []
+        for field in ("suburb", "neighbourhood", "village", "town", "city_district",
+                      "county", "city", "state_district", "state"):
+            val = address.get(field)
+            if val and val not in parts:
+                parts.append(val)
+            if len(parts) == 3:
+                break
+
+        short = ", ".join(parts) if parts else data.get("display_name", "")
+        return {
+            "short":   short,
+            "full":    data.get("display_name", ""),
+            "address": address,
+        }
+    except Exception:
+        return {"short": "", "full": "", "address": {}}
+
+
 def get_place_details(place_id: str) -> Dict[str, Any]:
     """Return details if available (OSM data already includes tags)."""
     return {}

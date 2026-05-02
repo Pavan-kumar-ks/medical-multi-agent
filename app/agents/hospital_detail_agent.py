@@ -169,24 +169,68 @@ def _scrape_doctors(
 def _llm_doctor_fallback(
     hospital_name: str, specialty: str, location: str
 ) -> List[Dict[str, Any]]:
-    """Use web search + LLM to extract doctor info when scraping fails."""
-    query = f"{hospital_name} {location} {specialty} doctor specialist name contact"
-    results = web_search(query, max_results=5)
+    """Use web search + direct page fetch + LLM to extract doctor info."""
+    # ── Collect search result snippets ─────────────────────────────────────
+    query = f"{hospital_name} {location} {specialty} doctor specialist"
+    results = web_search(query, max_results=6)
+
+    # Also try to fetch the first real hospital URL for deeper content
+    page_text = ""
+    for r in results:
+        url = r.get("url", "")
+        if url and url.startswith("http"):
+            try:
+                import requests as _req
+                resp = _req.get(
+                    url,
+                    headers={
+                        "User-Agent": (
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                            "AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36"
+                        )
+                    },
+                    timeout=10,
+                    allow_redirects=True,
+                )
+                if resp.status_code == 200 and "text/html" in resp.headers.get("content-type", ""):
+                    try:
+                        from bs4 import BeautifulSoup  # type: ignore
+                        soup = BeautifulSoup(resp.text, "lxml")
+                        for tag in soup(["script", "style", "nav", "footer", "header"]):
+                            tag.decompose()
+                        raw_text = soup.get_text(separator="\n")
+                    except ImportError:
+                        import re as _re
+                        raw_text = _re.sub(r"<[^>]+>", " ", resp.text)
+                    lines = [ln.strip() for ln in raw_text.splitlines() if len(ln.strip()) > 2]
+                    page_text = "\n".join(lines)[:5000]
+                    break
+            except Exception:
+                pass
+
     snippets = "\n\n".join(
         f"[{r.get('title','')}]\n{r.get('url','')}\n{r.get('snippet','')}"
         for r in results if r.get("snippet")
-    ) or "No results."
+    ) or "No search results found."
 
-    prompt = f"""Extract a list of {specialty} doctors from these search results.
+    combined_context = snippets
+    if page_text:
+        combined_context += f"\n\n--- Page Content ---\n{page_text}"
+
+    today = __import__("datetime").datetime.utcnow().strftime("%Y-%m-%d")
+    prompt = f"""Extract a list of {specialty} doctors at {hospital_name}.
 
 Hospital: {hospital_name}, {location}
 Specialty needed: {specialty}
 
-Search Results:
-{snippets}
+Information sources:
+{combined_context}
 
-Return ONLY valid JSON array. Include only real doctors found in the results.
-Do NOT invent names, phone numbers, or credentials.
+Instructions:
+- Only include real doctor names found in the sources above
+- Do NOT invent names, phone numbers, credentials, or any details
+- For missing fields use null
+- Return ONLY a valid JSON array
 
 [
   {{
@@ -199,10 +243,12 @@ Do NOT invent names, phone numbers, or credentials.
     "appointment_url": "URL or null",
     "availability": "days/hours or null",
     "experience": "X years or null",
-    "source_url": "source URL",
-    "last_updated": "today"
+    "source_url": "source URL or null",
+    "last_updated": "{today}"
   }}
 ]
+
+Return [] if no real doctor names are found.
 """
     response = llm_call(prompt)
     try:

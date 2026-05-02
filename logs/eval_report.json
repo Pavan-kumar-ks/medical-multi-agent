@@ -1,0 +1,1098 @@
+{
+  "results": [
+    {
+      "query_id": "cardiac_01",
+      "category": "cardiac",
+      "query": "I have severe chest pain radiating to my left arm and I'm sweating a lot",
+      "scores": {
+        "relevance": 0.5,
+        "factual_consistency": 1.0,
+        "task_completion": 0.85,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.805,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "cardiac_02",
+      "category": "cardiac",
+      "query": "My heart is beating very fast and irregularly for the past hour",
+      "scores": {
+        "relevance": 0.5,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.775,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.6
+    },
+    {
+      "query_id": "cardiac_03",
+      "category": "cardiac",
+      "query": "I have been having high blood pressure for 2 years and now I have headache",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.925,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "cardiac_04",
+      "category": "cardiac",
+      "query": "Chest tightness and shortness of breath when climbing stairs",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.925,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "cardiac_05",
+      "category": "cardiac",
+      "query": "Swollen ankles and difficulty breathing when lying flat at night",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 1.0,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 1.0,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.1
+    },
+    {
+      "query_id": "cardiac_06",
+      "category": "cardiac",
+      "query": "I feel dizzy and short of breath, my pulse is very weak",
+      "scores": {
+        "relevance": 0.5,
+        "factual_consistency": 1.0,
+        "task_completion": 0.95,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.835,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "cardiac_07",
+      "category": "cardiac",
+      "query": "Mild chest discomfort after eating spicy food, no sweating",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "cardiac_08",
+      "category": "cardiac",
+      "query": "Family history of heart disease, I have occasional chest pressure at rest",
+      "scores": {
+        "relevance": 0.5,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.775,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.1
+    },
+    {
+      "query_id": "cardiac_09",
+      "category": "cardiac",
+      "query": "I fainted suddenly and regained consciousness in 2 minutes",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.1
+    },
+    {
+      "query_id": "cardiac_10",
+      "category": "cardiac",
+      "query": "near AIIMS, experiencing crushing chest pain and jaw pain",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.95,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.985,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.3
+    },
+    {
+      "query_id": "resp_01",
+      "category": "respiratory",
+      "query": "I have been coughing with yellow-green phlegm for 5 days with high fever",
+      "scores": {
+        "relevance": 0.5,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.775,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.1
+    },
+    {
+      "query_id": "resp_02",
+      "category": "respiratory",
+      "query": "Sudden severe breathlessness, wheezing, I use an inhaler",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.95,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.985,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.1
+    },
+    {
+      "query_id": "resp_03",
+      "category": "respiratory",
+      "query": "Chronic cough for 3 months, smoker for 20 years, breathless on exertion",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.925,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.1
+    },
+    {
+      "query_id": "resp_04",
+      "category": "respiratory",
+      "query": "Mild cough, runny nose, slight sore throat for 2 days",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 0.65,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.777,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.3
+    },
+    {
+      "query_id": "resp_05",
+      "category": "respiratory",
+      "query": "Coughing blood for 2 days with weight loss and night sweats",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.925,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.1
+    },
+    {
+      "query_id": "resp_06",
+      "category": "respiratory",
+      "query": "Seasonal sneezing, itchy eyes, and runny nose every spring",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "resp_07",
+      "category": "respiratory",
+      "query": "My 4-year-old has noisy breathing, barking cough at night",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "resp_08",
+      "category": "respiratory",
+      "query": "Breathless at rest, SpO2 dropping to 88%, COVID positive",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.85,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.955,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "neuro_01",
+      "category": "neurological",
+      "query": "Sudden severe one-sided facial drooping and arm weakness since 30 minutes",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.95,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.985,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "neuro_02",
+      "category": "neurological",
+      "query": "Severe throbbing headache on one side with nausea and light sensitivity",
+      "scores": {
+        "relevance": 0.5,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.775,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.3
+    },
+    {
+      "query_id": "neuro_03",
+      "category": "neurological",
+      "query": "Convulsions lasting 3 minutes, lost consciousness, no prior history",
+      "scores": {
+        "relevance": 0.5,
+        "factual_consistency": 1.0,
+        "task_completion": 0.85,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.805,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "neuro_04",
+      "category": "neurological",
+      "query": "Persistent dizziness and vertigo when turning head, spinning sensation",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "neuro_05",
+      "category": "neurological",
+      "query": "Memory loss, confusion, and personality change over 6 months in elderly",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.925,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.1
+    },
+    {
+      "query_id": "neuro_06",
+      "category": "neurological",
+      "query": "Stiff neck, high fever, and sensitivity to light in a 20-year-old",
+      "scores": {
+        "relevance": 0.5,
+        "factual_consistency": 1.0,
+        "task_completion": 1.0,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.85,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.3
+    },
+    {
+      "query_id": "neuro_07",
+      "category": "neurological",
+      "query": "Tingling and numbness in both hands and feet for 2 weeks",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.3
+    },
+    {
+      "query_id": "gi_01",
+      "category": "gastrointestinal",
+      "query": "Severe pain in right lower abdomen, worse with movement, vomiting",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.85,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.955,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.1
+    },
+    {
+      "query_id": "gi_02",
+      "category": "gastrointestinal",
+      "query": "Burning epigastric pain, worse on empty stomach, relieved by food",
+      "scores": {
+        "relevance": 0.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.625,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.4
+    },
+    {
+      "query_id": "gi_03",
+      "category": "gastrointestinal",
+      "query": "Yellow skin and eyes, dark urine, and fatigue for 1 week",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.925,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.5
+    },
+    {
+      "query_id": "gi_04",
+      "category": "gastrointestinal",
+      "query": "Loose motions 8 times today with blood and severe cramps",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.3
+    },
+    {
+      "query_id": "gi_05",
+      "category": "gastrointestinal",
+      "query": "Severe upper abdominal pain radiating to back, nausea, alcoholic",
+      "scores": {
+        "relevance": 0.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.625,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.4
+    },
+    {
+      "query_id": "gi_06",
+      "category": "gastrointestinal",
+      "query": "Acid reflux after meals, heartburn, difficulty swallowing",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.4
+    },
+    {
+      "query_id": "infect_01",
+      "category": "infectious",
+      "query": "High fever 103°F, severe joint pain, rash on body, live in dengue zone",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.925,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "infect_02",
+      "category": "infectious",
+      "query": "Cyclical fever with chills every 2 days, I recently visited a forest area",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 1.0,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 1.0,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.4
+    },
+    {
+      "query_id": "infect_03",
+      "category": "infectious",
+      "query": "Step-wise fever for 7 days, rose-coloured spots on abdomen, constipation",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.925,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.6
+    },
+    {
+      "query_id": "infect_04",
+      "category": "infectious",
+      "query": "Mild fever, headache, tired body, feeling like resting",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 0.65,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.777,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.4
+    },
+    {
+      "query_id": "infect_05",
+      "category": "infectious",
+      "query": "Burning sensation when urinating, frequent urges, lower abdominal pain",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.1
+    },
+    {
+      "query_id": "infect_06",
+      "category": "infectious",
+      "query": "Painful blisters on one side of chest, burning before blisters appeared",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.4
+    },
+    {
+      "query_id": "infect_07",
+      "category": "infectious",
+      "query": "Child with red rash starting on face spreading to body, mild fever",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 0.65,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.777,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.4
+    },
+    {
+      "query_id": "metab_01",
+      "category": "metabolic",
+      "query": "Excessive thirst, frequent urination, unexplained weight loss",
+      "scores": {
+        "relevance": 0.5,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.775,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.3
+    },
+    {
+      "query_id": "metab_02",
+      "category": "metabolic",
+      "query": "Diabetic patient, confused, sweating, not eaten for 6 hours",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.85,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.955,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "metab_03",
+      "category": "metabolic",
+      "query": "Weight gain, fatigue, cold intolerance, hair loss, slow heart rate",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.925,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.4
+    },
+    {
+      "query_id": "metab_04",
+      "category": "metabolic",
+      "query": "Weight loss, tremors, excessive sweating, bulging eyes",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.925,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "ortho_01",
+      "category": "orthopaedic",
+      "query": "Fell from bike, right wrist pain, swelling, deformity",
+      "scores": {
+        "relevance": 0.5,
+        "factual_consistency": 1.0,
+        "task_completion": 1.0,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.85,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.4
+    },
+    {
+      "query_id": "ortho_02",
+      "category": "orthopaedic",
+      "query": "Morning stiffness in multiple joints for more than 1 hour, bilateral",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "ortho_03",
+      "category": "orthopaedic",
+      "query": "Lower back pain radiating down to left leg, worse on sitting",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "followup_01",
+      "category": "followup",
+      "query": "What are the home remedies for my condition?",
+      "scores": {
+        "relevance": 0.333,
+        "factual_consistency": 1.0,
+        "task_completion": 0.8,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.74,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.3
+    },
+    {
+      "query_id": "followup_02",
+      "category": "followup",
+      "query": "What medicines should I take for this?",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.6,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.82,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "followup_03",
+      "category": "followup",
+      "query": "What diet should I follow for my disease?",
+      "scores": {
+        "relevance": 0.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.6,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.58,
+      "passed": false,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.3
+    },
+    {
+      "query_id": "followup_04",
+      "category": "followup",
+      "query": "How long will it take to recover?",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.6,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.82,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.4
+    },
+    {
+      "query_id": "followup_05",
+      "category": "followup",
+      "query": "What are the warning signs I should watch out for?",
+      "scores": {
+        "relevance": 0.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.6,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.58,
+      "passed": false,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "nonmed_01",
+      "category": "non_medical",
+      "query": "What is the best restaurant near me?",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.15,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.745,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.8
+    },
+    {
+      "query_id": "nonmed_02",
+      "category": "non_medical",
+      "query": "Tell me about the weather today",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.15,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.745,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.1
+    },
+    {
+      "query_id": "nonmed_03",
+      "category": "non_medical",
+      "query": "Help me write a poem",
+      "scores": {
+        "relevance": 0.55,
+        "factual_consistency": 1.0,
+        "task_completion": 0.15,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.61,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "nonmed_04",
+      "category": "non_medical",
+      "query": "I want to know about Indian cricket team",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 0.8,
+        "task_completion": 0.15,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.695,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.3
+    },
+    {
+      "query_id": "landmark_01",
+      "category": "landmark_symptom",
+      "query": "I am near AIIMS and feeling very dizzy and nauseous",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.4
+    },
+    {
+      "query_id": "landmark_02",
+      "category": "landmark_symptom",
+      "query": "Near Manipal hospital, chest pain and breathlessness",
+      "scores": {
+        "relevance": 1.0,
+        "factual_consistency": 1.0,
+        "task_completion": 0.95,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.985,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.3
+    },
+    {
+      "query_id": "landmark_03",
+      "category": "landmark_symptom",
+      "query": "I am at Bangalore bus stand and I have severe headache and vomiting",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 1.0,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.94,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.1
+    },
+    {
+      "query_id": "paed_01",
+      "category": "paediatric",
+      "query": "My 2-year-old has fever of 104°F and is having convulsions",
+      "scores": {
+        "relevance": 0.5,
+        "factual_consistency": 1.0,
+        "task_completion": 1.0,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.85,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    },
+    {
+      "query_id": "paed_02",
+      "category": "paediatric",
+      "query": "6-month-old baby not feeding well, lethargic, bulging fontanelle",
+      "scores": {
+        "relevance": 0.5,
+        "factual_consistency": 1.0,
+        "task_completion": 0.85,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.805,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.3
+    },
+    {
+      "query_id": "paed_03",
+      "category": "paediatric",
+      "query": "My child has a sore throat and white patches on tonsils, mild fever",
+      "scores": {
+        "relevance": 0.8,
+        "factual_consistency": 1.0,
+        "task_completion": 0.75,
+        "hallucination_free": 1.0
+      },
+      "weighted_total": 0.865,
+      "passed": true,
+      "hallucination_flagged": false,
+      "hallucination_flags": [],
+      "llm_reasoning": "",
+      "duration_ms": 0.2
+    }
+  ],
+  "errors": [],
+  "summary": {
+    "total_queries": 60,
+    "passed": 58,
+    "failed": 2,
+    "pass_rate_pct": 96.7,
+    "avg_score": 0.845,
+    "min_score": 0.58,
+    "max_score": 1.0,
+    "hallucinations_flagged": 0,
+    "per_category": {
+      "cardiac": {
+        "total": 10,
+        "pass_rate": 1.0,
+        "avg_score": 0.876
+      },
+      "respiratory": {
+        "total": 8,
+        "pass_rate": 1.0,
+        "avg_score": 0.884
+      },
+      "neurological": {
+        "total": 7,
+        "pass_rate": 1.0,
+        "avg_score": 0.867
+      },
+      "gastrointestinal": {
+        "total": 6,
+        "pass_rate": 1.0,
+        "avg_score": 0.81
+      },
+      "infectious": {
+        "total": 7,
+        "pass_rate": 1.0,
+        "avg_score": 0.876
+      },
+      "metabolic": {
+        "total": 4,
+        "pass_rate": 1.0,
+        "avg_score": 0.895
+      },
+      "orthopaedic": {
+        "total": 3,
+        "pass_rate": 1.0,
+        "avg_score": 0.86
+      },
+      "followup": {
+        "total": 5,
+        "pass_rate": 0.6,
+        "avg_score": 0.708
+      },
+      "non_medical": {
+        "total": 4,
+        "pass_rate": 1.0,
+        "avg_score": 0.699
+      },
+      "landmark_symptom": {
+        "total": 3,
+        "pass_rate": 1.0,
+        "avg_score": 0.93
+      },
+      "paediatric": {
+        "total": 3,
+        "pass_rate": 1.0,
+        "avg_score": 0.84
+      }
+    }
+  },
+  "meta": {
+    "elapsed_s": 102.5,
+    "mode": "mock_llm",
+    "llm_judge": false,
+    "query_count": 60
+  }
+}

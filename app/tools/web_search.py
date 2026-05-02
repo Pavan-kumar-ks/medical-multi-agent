@@ -18,18 +18,19 @@ _HEADERS = {
 }
 
 
-def web_search(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
-    """Search the web and return [{title, url, snippet}].
-
-    Tries (in order):
-    1. duckduckgo_search library  (pip install duckduckgo-search)
-    2. DuckDuckGo instant-answer JSON API
-    """
-    # ── Attempt 1: duckduckgo_search library ──────────────────────────────
+def _ddgs_search(query: str, max_results: int) -> List[Dict[str, Any]]:
+    """Try both the new `ddgs` package and the legacy `duckduckgo_search` package."""
+    # ── Try new package name: ddgs ────────────────────────────────────────
     try:
-        from duckduckgo_search import DDGS  # type: ignore
-        with DDGS() as ddgs:
-            raw = list(ddgs.text(query, max_results=max_results))
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            try:
+                from ddgs import DDGS  # type: ignore  # new name
+            except ImportError:
+                from duckduckgo_search import DDGS  # type: ignore  # legacy name
+        with DDGS() as client:
+            raw = list(client.text(query, max_results=max_results))
         return [
             {
                 "title":   r.get("title", ""),
@@ -42,6 +43,20 @@ def web_search(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
         pass
     except Exception:
         pass
+    return []
+
+
+def web_search(query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+    """Search the web and return [{title, url, snippet}].
+
+    Tries (in order):
+    1. ddgs / duckduckgo_search library
+    2. DuckDuckGo instant-answer JSON API
+    """
+    # ── Attempt 1: DDGS library ───────────────────────────────────────────
+    results = _ddgs_search(query, max_results)
+    if results:
+        return results
 
     # ── Attempt 2: DuckDuckGo instant-answer API ──────────────────────────
     try:

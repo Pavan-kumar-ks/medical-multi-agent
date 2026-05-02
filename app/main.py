@@ -1,5 +1,7 @@
 import sys
 import os
+import re
+import difflib
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app.orchestrator.graph import build_graph
@@ -52,29 +54,90 @@ def _try_parse_age(text: str):
         return None
 
 
+_HOSPITAL_STOP_WORDS = {
+    "hospital", "hospitals", "clinic", "clinics", "medical", "centre",
+    "center", "health", "care", "healthcare", "the", "and", "of", "at",
+    "limited", "ltd", "pvt", "private", "trust", "foundation",
+}
+
+# Words that suggest the user is trying to select a hospital
+_HOSPITAL_INTENT_WORDS = {
+    "hospital", "clinic", "medical", "health", "care", "centre", "center",
+    "nursing", "institute", "apollo", "fortis", "manipal", "narayana",
+    "columbia", "ramaiah", "ramaja", "bgS", "bgs", "m s ", "ms ",
+    "dr ", "nelamangala", "bengaluru", "bangalore",
+}
+
+
+def _normalize_name(name: str) -> str:
+    """Lowercase, strip punctuation, remove stop words, collapse spaces."""
+    tokens = re.sub(r"[^\w\s]", " ", name.lower()).split()
+    core = [t for t in tokens if t not in _HOSPITAL_STOP_WORDS and len(t) > 1]
+    return " ".join(core)
+
+
 def _match_hospital(user_input: str, hospitals: list) -> dict | None:
     """Try to match the user's input to one of the shown hospitals.
 
     Accepts:
-    - A number ("1", "2" … "5")
-    - A partial or full hospital name
+    1. A digit (1–5)
+    2. Exact/substring name match
+    3. Fuzzy token-normalised name match (difflib ratio ≥ 0.55)
     """
     text = user_input.strip()
 
-    # Number selection
+    # ── 1. Number selection ──────────────────────────────────────────────
     if text.isdigit():
         idx = int(text) - 1
         if 0 <= idx < len(hospitals):
             return hospitals[idx]
 
-    # Name match (case-insensitive substring)
+    # ── 2. Exact substring match ─────────────────────────────────────────
     text_lower = text.lower()
     for h in hospitals:
         name = (h.get("name") or "").lower()
         if name and (name in text_lower or text_lower in name):
             return h
 
+    # ── 3. Fuzzy normalised match ─────────────────────────────────────────
+    user_norm = _normalize_name(text)
+    if user_norm:
+        best_score, best_match = 0.0, None
+        for h in hospitals:
+            hosp_norm = _normalize_name(h.get("name", ""))
+            if not hosp_norm:
+                continue
+            ratio = difflib.SequenceMatcher(None, user_norm, hosp_norm).ratio()
+            if ratio > best_score:
+                best_score = ratio
+                best_match = h
+        if best_score >= 0.50:
+            return best_match
+
     return None
+
+
+def _best_fuzzy_hospital(user_input: str, hospitals: list) -> dict | None:
+    """Return the closest-matching hospital even below the confident threshold."""
+    user_norm = _normalize_name(user_input)
+    if not user_norm or not hospitals:
+        return None
+    return max(
+        hospitals,
+        key=lambda h: difflib.SequenceMatcher(
+            None, user_norm, _normalize_name(h.get("name", ""))
+        ).ratio(),
+        default=None,
+    )
+
+
+def _looks_like_hospital_query(text: str) -> bool:
+    """Return True when the text likely refers to a hospital name or selection."""
+    t = text.lower()
+    # Single digit is clearly a selection attempt
+    if text.strip().isdigit():
+        return True
+    return any(kw in t for kw in _HOSPITAL_INTENT_WORDS)
 
 
 def _store_diagnosis_context(session_memory: SessionMemory, result: dict):
@@ -135,6 +198,12 @@ if __name__ == "__main__":
             break
 
         if user_input.lower() in ["quit", "exit"]:
+            # Print session metrics on clean exit
+            try:
+                from app.observability.metrics import collector
+                collector.print_summary()
+            except Exception:
+                pass
             break
 
         # ── Step 1: Collect name ──────────────────────────────────────────
@@ -242,13 +311,31 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f"Could not retrieve hospital details: {e}")
 
-                # Allow another selection or continue
-                session_memory.set("awaiting_hospital_selection", False)
+                # Keep selection open in case user wants another hospital
+                session_memory.set("awaiting_hospital_selection", True)
+                print("\nAssistant:")
+                print("─" * 52)
+                print("  💡  Select another hospital (name or number 1–5),")
+                print("      or type your next medical concern.")
+                print("─" * 52)
+                print("\n" + "=" * 50 + "\n")
+                continue
+
+            elif _looks_like_hospital_query(user_input):
+                # User is clearly trying to pick a hospital but the name didn't match
+                suggestion = _best_fuzzy_hospital(user_input, shown_hospitals)
+                print("\nAssistant:")
+                print(f"  ⚠️   I couldn't find \"{user_input.strip()}\" in the hospital list.")
+                if suggestion:
+                    print(f"  Did you mean: {suggestion['name']}?")
+                print("  Please type the exact name or use a number (1–5):")
+                for i, h in enumerate(shown_hospitals, 1):
+                    print(f"    {i}.  {h.get('name', '')}")
                 print("\n" + "=" * 50 + "\n")
                 continue
 
             else:
-                # Not a hospital selection — clear flag, fall through to graph
+                # User moved on to a new medical concern — clear the flag
                 session_memory.set("awaiting_hospital_selection", False)
 
         # ── Empty input guard ─────────────────────────────────────────────
